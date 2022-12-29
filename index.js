@@ -1,7 +1,7 @@
 var range = document.getElementById('range');
 
 noUiSlider.create(range, {
-    start: [0, 8],
+    start: [2, 6],
     step: 1,
     connect: true,
     range: {
@@ -81,7 +81,7 @@ function play() {
         for (let note of code.notes) {
             synth.triggerAttackRelease(`${note.note}${note.alteration | ""}${note.mood | ""}${note.octave ?
                 toFormat(range.noUiSlider.get()[0], range.noUiSlider.get()[1], note.octave) : "4"}`, "4n", now);
-            now += 0.25;
+            now += 0.20;
         }
     }
     catch (err) {
