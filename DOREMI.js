@@ -58,7 +58,7 @@ class Note {
     }
 
     execute(serviceVariables, config = Note.defaultConfig) {
-        if (!serviceVariables.skip || !serviceVariables.skipCondition.statement) {
+        if (!serviceVariables.skip && !serviceVariables.skipCondition.statement) {
             const commands = [Note.defaultCommands.notes];
             if (this.mood)
                 this.mood === Note.MOODS.m.name ?
@@ -341,7 +341,7 @@ class DoReMi {
 // console.log(test.output)
 // console.log(DoReMi.convertOutputToString(test.output))
 
-// const test2 = DoReMi.fromString(`BM0 D# Ab0 Bm0`, [100]);
+// const test2 = DoReMi.fromString(`BM0 D# Ab0 Bm0`, []);
 // console.log(test2.output)
 
 // const test3 = DoReMi.fromString(`BM0 D# Ab0 Bm0`);
