@@ -9,7 +9,7 @@ class ServiceVariables {
         this.returnTo = [];
         this.jumpTo = [];
         this.skip = false;
-        this.skipCondition = { statement: false, count: 0 };
+        this.skipCondition = { statement: false, elseCount: 0, count: 0 };
     }
 
     get index() { return this._index }
@@ -38,7 +38,9 @@ class ServiceVariables {
     }
 
     return() {
-        this.iteration = (this.returnTo.pop() || this.iteration) - 1;
+        if (this.returnTo[0])
+            this.iteration = (this.returnTo.pop() || this.iteration) - 1;
+        else this.jumpTo.shift();
     }
 
     jump() {
@@ -58,6 +60,7 @@ class Note {
     }
 
     execute(serviceVariables, config = Note.defaultConfig) {
+        console.log(serviceVariables)
         if (!serviceVariables.skip && !serviceVariables.skipCondition.statement) {
             const commands = [Note.defaultCommands.notes];
             if (this.mood)
@@ -69,11 +72,36 @@ class Note {
 
             commands.forEach(command => command(this, serviceVariables, config, commands));
         }
-        else if (this.note === Note.NOTES.F.name && !(this.octave in [Note.OCTAVES[0].name, Note.OCTAVES[4].name, Note.OCTAVES[8].name])) {
 
+        else if (serviceVariables.skipCondition.statement) {
+            if (this.note === Note.NOTES.F.name) {
+                switch (this.octave) {
+                    case Note.OCTAVES[4].name:
+                        break;
+
+                    case Note.OCTAVES[0].name:
+                    case Note.OCTAVES[8].name:
+                        serviceVariables.skipCondition.statement = false;
+                        serviceVariables.iteration--;
+                        break;
+
+                    default:
+                        serviceVariables.skipCondition.count++;
+
+                }
+            }
+            if (this.note === Note.ALTERATIONS["#"].name) {
+                serviceVariables.skipCondition.count++;
+            }
         }
-        else if (this.alteration === Note.ALTERATIONS.b.name) {
+
+        if (this.alteration === Note.ALTERATIONS.b.name) {
             serviceVariables.skip = false;
+
+            if (serviceVariables.skipCondition.count > 0) serviceVariables.skipCondition.count--;
+            else serviceVariables.skipCondition.statement = false;
+
+            if (serviceVariables.skipCondition.elseCount > 0) serviceVariables.skipCondition.elseCount--;
         }
         serviceVariables.iteration++;
     }
@@ -82,7 +110,7 @@ class Note {
         notes: (noteClass, serviceVariables) => Note.NOTES[noteClass.note](serviceVariables, noteClass.octave),
         moods: (noteClass, serviceVariables, config) => Note.MOODS[noteClass.mood](serviceVariables, config === Note.defaultConfig ?
             Note.standartConfig(serviceVariables) : { ...Note.standartConfig(serviceVariables), ...config }),
-        alterations: (noteClass, serviceVariables, _, commands) => Note.ALTERATIONS[noteClass.alteration](serviceVariables, commands)
+        alterations: (noteClass, serviceVariables, _, commands) => Note.ALTERATIONS[noteClass.alteration](serviceVariables, commands, noteClass.note)
     }
 
     static calc(serviceVariables, octave, operation1, operation2, number) {
@@ -122,6 +150,9 @@ class Note {
 
     static ALTERATIONS = {
         "#": (serviceVariables, commands) => {
+            serviceVariables.skipCondition.count++;
+            serviceVariables.skipCondition.elseCount++;
+
             if (serviceVariables.stack != 0) {
                 serviceVariables.returnTo.push(serviceVariables.iteration);
                 serviceVariables.jumpTo.shift();
@@ -153,7 +184,7 @@ class Note {
             serviceVariables.skipCondition.statement = true;
         }
         else {
-
+            serviceVariables.skipCondition.elseCount++;
         }
     }
 
@@ -171,7 +202,7 @@ class Note {
             this.skipCondition(serviceVariables, serviceVariables.stack == serviceVariables.next);
         },
         4: (serviceVariables) => {
-
+            if (serviceVariables.skipCondition.elseCount > 0) serviceVariables.skipCondition.statement = true;
         },
         5: (serviceVariables) => {
             this.skipCondition(serviceVariables, serviceVariables.stack != serviceVariables.next);
@@ -311,7 +342,7 @@ class DoReMi {
     }
 
     static fromString(string, input = [], run = true) {
-        const arr = string.split(/\s+/);
+        const arr = string.trim().split(/\s+/);
         const notes = [];
         arr.forEach(elem => notes.push(Note.fromString(elem)));
         return new DoReMi(notes, input, run);
@@ -344,6 +375,6 @@ class DoReMi {
 // const test2 = DoReMi.fromString(`BM0 D# Ab0 Bm0`, []);
 // console.log(test2.output)
 
-// const test3 = DoReMi.fromString(`BM0 D# Ab0 Bm0`);
-// console.log(test3.output)
+const test3 = DoReMi.fromString(`F3 E F4 Db Bm0`);
+console.log(test3.output)
 // console.log(DoReMi.convertOutputToString(test3.output))
