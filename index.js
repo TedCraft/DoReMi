@@ -1,7 +1,7 @@
 var range = document.getElementById('range');
 
 noUiSlider.create(range, {
-    start: [2, 6],
+    start: [3, 4],
     step: 1,
     connect: true,
     range: {
@@ -78,11 +78,21 @@ function play() {
         const code = DoReMi.fromString(document.getElementById("code").value, inputArray, false);
 
         let now = Tone.now();
-        for (let note of code.notes) {
-            synth.triggerAttackRelease(`${note.note}${note.alteration | ""}${note.mood | ""}${note.octave ?
-                toFormat(range.noUiSlider.get()[0], range.noUiSlider.get()[1], note.octave) : "4"}`, "4n", now);
-            now += 0.20;
+        if (!document.getElementById("iterative").checked)
+            for (let note of code.notes) {
+                synth.triggerAttackRelease(`${note.note}${note.alteration | ""}${note.mood | ""}${note.octave ?
+                    toFormat(range.noUiSlider.get()[0], range.noUiSlider.get()[1], note.octave) : "4"}`, "4n", now);
+                now += 0.20;
+            }
+        else {
+            const notes = code.run(true);
+            for (let note of notes) {
+                synth.triggerAttackRelease(`${note.note}${note.alteration | ""}${note.mood | ""}${note.octave ?
+                    toFormat(range.noUiSlider.get()[0], range.noUiSlider.get()[1], note.octave) : "4"}`, "4n", now);
+                now += 0.20;
+            }
         }
+
     }
     catch (err) {
         alert(err)
