@@ -60,7 +60,7 @@ class Note {
     }
 
     execute(serviceVariables, config = Note.defaultConfig) {
-        console.log(serviceVariables)
+        // console.log(serviceVariables)
         if (!serviceVariables.skip && !serviceVariables.skipCondition.statement) {
             const commands = [Note.defaultCommands.notes];
             if (this.mood)
@@ -341,6 +341,68 @@ class DoReMi {
         return String.fromCharCode(...output);
     }
 
+    static parse(notes = [new Note()], keep = []) {
+        notes = [...notes]
+        const ast = keep;
+        let idx = 0;
+        let del = 0;
+        for (let i = 0; i < notes.length; i++) {
+            const note = notes[i];
+
+            const nToken = {
+                type: "note",
+                cmd: note.note,
+                octave: note.octave
+            };
+            if (note.note === Note.NOTES.F.name) {
+                if (!(note.octave === "4")) {
+                    const body = DoReMi.parse(notes.slice(idx + 1));
+                    nToken.true = body.ast;
+                    notes.splice(idx + 1, body.idx + body.del);
+                    del += body.idx + 1 + body.del;
+
+                    if (body.else) {
+                        const eBody = DoReMi.parse(notes.slice(idx + 1));
+                        nToken.false = eBody.ast;
+                        notes.splice(idx + 1, eBody.idx + eBody.del);
+                        del += eBody.idx + 1 + eBody.del;
+                    }
+                }
+                else {
+                    return { ast: ast, idx: idx + 1, del: del, else: true };
+                }
+            }
+            const arr = [nToken];
+
+            if (note.mood) {
+                const cmd = {
+                    type: "mood",
+                    cmd: note.mood
+                };
+                note.mood === Note.MOODS.m.name ?
+                    arr.push(cmd) : arr.unshift(cmd);
+            }
+
+            if (note.alteration) {
+                if (note.alteration === Note.ALTERATIONS["#"].name) {
+                    const body = DoReMi.parse(notes.slice(idx + 1), arr);
+                    ast.push({ type: "alt", cmd: note.alteration, prog: body.ast });
+                    notes.splice(idx + 1, body.idx + body.del)
+                    del += body.idx + 1 + body.del;
+                    continue;
+                }
+                else {
+                    arr.forEach(elem => ast.push(elem));
+                    return { ast: ast, idx: idx + 1, del: del };
+                }
+            }
+
+            arr.forEach(elem => ast.push(elem));
+            idx++;
+        }
+        return ast;
+    }
+
     static fromString(string, input = [], run = true) {
         const arr = string.trim().split(/\s+/);
         const notes = [];
@@ -375,6 +437,15 @@ class DoReMi {
 // const test2 = DoReMi.fromString(`BM0 D# Ab0 Bm0`, []);
 // console.log(test2.output)
 
-const test3 = DoReMi.fromString(`F3 E F4 Db Bm0`);
-console.log(test3.output)
+// const test3 = DoReMi.fromString(`F3 E F4 Db Bm0`);
+// console.log(test3.output)
 // console.log(DoReMi.convertOutputToString(test3.output))
+
+// const test = DoReMi.fromString(`B5 E E E A1 E1 D G1 E A1 E2 E1 A3 E3 G4 E Em B2 E1 G0 Em Em2 Am0 Em3 A1 E4 G2 E Em A1 E3 E4 D Dm Bm2 Em3 D1 E3 Em D2 Dm A1 Em Bm2`);
+// const test = DoReMi.fromString(`B1 AM1 E B1 A#1 G1 B1 Db Am1`);
+const test = DoReMi.fromString(`B1 F3 E F4 Db B# Abm1`, [], false);
+
+// const test = DoReMi.fromString(`F3 E F4 Db Bm0`);
+
+console.log(DoReMi.parse(test.notes));
+// console.log(DoReMi.parse(test.notes)[5].prog[3].prog);
