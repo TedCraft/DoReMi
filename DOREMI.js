@@ -324,9 +324,13 @@ class DoReMi {
         if (run) this.run();
     }
 
-    run() {
-        while (this.serviceVariables.iteration < this.notes.length)
+    run(iterative = false) {
+        const iterArray = [];
+        while (this.serviceVariables.iteration < this.notes.length) {
+            if(iterative) iterArray.push(this.notes[this.serviceVariables.iteration]); 
             this.notes[this.serviceVariables.iteration].execute(this.serviceVariables)
+        }
+        return iterArray;
     }
 
     get output() {
@@ -449,3 +453,9 @@ const test = DoReMi.fromString(`B1 F3 E F4 Db B# Abm1`, [], false);
 
 console.log(DoReMi.parse(test.notes));
 // console.log(DoReMi.parse(test.notes)[5].prog[3].prog);
+// const test3 = DoReMi.fromString(`F3 E F4 Db Bm0`);B1 AM1 E G1 B1 D# A1 G1 Bb1 Bm0
+// console.log(test3.output)
+
+// const test3 = DoReMi.fromString(`B1 AM1 E B1 A#1 G1 B1 Db Am1`, [10]);
+// console.log(test3.output)
+// console.log(DoReMi.convertOutputToString(test3.output))
