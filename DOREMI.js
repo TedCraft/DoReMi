@@ -363,7 +363,7 @@ class DoReMi {
 
                     if (body.else) {
                         obj.idx++
-                        nToken.false = DoReMi.parse(notes, obj);
+                        nToken.false = DoReMi.parse(notes, obj).ast;
                     }
                 }
                 else {
@@ -384,12 +384,12 @@ class DoReMi {
             if (note.alteration) {
                 if (note.alteration === Note.ALTERATIONS["#"].name) {
                     obj.idx++
-                    ast.push({ type: "alt", cmd: note.alteration, prog: DoReMi.parse(notes, obj, arr) });
+                    ast.push({ type: "alt", cmd: note.alteration, prog: DoReMi.parse(notes, obj, arr).ast });
                     continue;
                 }
                 else {
                     arr.forEach(elem => ast.push(elem));
-                    return ast;
+                    return {ast: ast};
                 }
             }
 
