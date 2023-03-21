@@ -327,7 +327,7 @@ class DoReMi {
     run(iterative = false) {
         const iterArray = [];
         while (this.serviceVariables.iteration < this.notes.length) {
-            if(iterative) iterArray.push(this.notes[this.serviceVariables.iteration]); 
+            if (iterative) iterArray.push(this.notes[this.serviceVariables.iteration]);
             this.notes[this.serviceVariables.iteration].execute(this.serviceVariables)
         }
         return iterArray;
@@ -345,13 +345,10 @@ class DoReMi {
         return String.fromCharCode(...output);
     }
 
-    static parse(notes = [new Note()], keep = []) {
-        notes = [...notes]
+    static parse(notes = [new Note()], obj = { idx: 0 }, keep = []) {
         const ast = keep;
-        let idx = 0;
-        let del = 0;
-        for (let i = 0; i < notes.length; i++) {
-            const note = notes[i];
+        for (; obj.idx < notes.length; obj.idx++) {
+            const note = notes[obj.idx];
 
             const nToken = {
                 type: "note",
@@ -360,20 +357,17 @@ class DoReMi {
             };
             if (note.note === Note.NOTES.F.name) {
                 if (!(note.octave === "4")) {
-                    const body = DoReMi.parse(notes.slice(idx + 1));
+                    obj.idx++
+                    const body = DoReMi.parse(notes, obj);
                     nToken.true = body.ast;
-                    notes.splice(idx + 1, body.idx + body.del);
-                    del += body.idx + 1 + body.del;
 
                     if (body.else) {
-                        const eBody = DoReMi.parse(notes.slice(idx + 1));
-                        nToken.false = eBody.ast;
-                        notes.splice(idx + 1, eBody.idx + eBody.del);
-                        del += eBody.idx + 1 + eBody.del;
+                        obj.idx++
+                        nToken.false = DoReMi.parse(notes, obj);
                     }
                 }
                 else {
-                    return { ast: ast, idx: idx + 1, del: del, else: true };
+                    return {ast:ast, else:true};
                 }
             }
             const arr = [nToken];
@@ -389,20 +383,17 @@ class DoReMi {
 
             if (note.alteration) {
                 if (note.alteration === Note.ALTERATIONS["#"].name) {
-                    const body = DoReMi.parse(notes.slice(idx + 1), arr);
-                    ast.push({ type: "alt", cmd: note.alteration, prog: body.ast });
-                    notes.splice(idx + 1, body.idx + body.del)
-                    del += body.idx + 1 + body.del;
+                    obj.idx++
+                    ast.push({ type: "alt", cmd: note.alteration, prog: DoReMi.parse(notes, obj, arr) });
                     continue;
                 }
                 else {
                     arr.forEach(elem => ast.push(elem));
-                    return { ast: ast, idx: idx + 1, del: del };
+                    return ast;
                 }
             }
 
             arr.forEach(elem => ast.push(elem));
-            idx++;
         }
         return ast;
     }
@@ -447,9 +438,9 @@ class DoReMi {
 
 // const test = DoReMi.fromString(`B5 E E E A1 E1 D G1 E A1 E2 E1 A3 E3 G4 E Em B2 E1 G0 Em Em2 Am0 Em3 A1 E4 G2 E Em A1 E3 E4 D Dm Bm2 Em3 D1 E3 Em D2 Dm A1 Em Bm2`);
 // const test = DoReMi.fromString(`B1 AM1 E B1 A#1 G1 B1 Db Am1`);
-const test = DoReMi.fromString(`B1 F3 E F4 Db B# Abm1`, [], false);
+// const test = DoReMi.fromString(`B1 F3 E F4 Db B# Abm1`, [], false);
 
-// const test = DoReMi.fromString(`F3 E F4 Db Bm0`);
+const test = DoReMi.fromString(`F3 E F4 Db Bm0`);
 
 console.log(DoReMi.parse(test.notes));
 // console.log(DoReMi.parse(test.notes)[5].prog[3].prog);
